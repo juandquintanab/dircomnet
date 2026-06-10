@@ -1,0 +1,25 @@
+.pl-portal {
+  min-height: 100vh;
+  background: var(--surface-app);
+  display: flex;
+  flex-direction: column;
+}
+
+.pl-portal__gerencia + .pl-portal__gerencia {
+  margin-top: var(--space-10);
+}
+
+/* Código de sistema dentro del tile (ADM, RAD, INF) */
+.pl-tile__meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.pl-tile__codigo {
+  font-size: var(--fs-body-xs);
+  font-weight: var(--fw-bold);
+  letter-spacing: var(--tracking-label);
+  text-transform: uppercase;
+  color: var(--blue-500);
+}

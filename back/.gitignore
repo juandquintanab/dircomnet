@@ -1,0 +1,32 @@
+# Dependencias
+node_modules/
+
+# Variables de entorno — NUNCA subir
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Build (si se agrega TypeScript o transpilación)
+dist/
+build/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# Cache
+.cache/
+.eslintcache
+
+# Archivos de uploads o temporales locales
+uploads/
+tmp/
+
+# PM2
+.pm2/
+ecosystem.config.js.bak

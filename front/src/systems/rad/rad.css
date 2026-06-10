@@ -1,0 +1,34 @@
+/* ── RAD — Gestión de Planes de Radio ── */
+
+/* Estado vacío compartido */
+.rad-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-5);
+  padding: var(--space-16) var(--space-8);
+  text-align: center;
+}
+
+.rad-empty-state__msg {
+  font-size: var(--fs-body-m);
+  color: var(--fg-3);
+}
+
+/* input[type=time] heredando estilos del kit */
+input[type='time'].pl-input {
+  width: 100%;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-s);
+  color: var(--fg-2);
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 9px 12px;
+  outline: none;
+}
+
+input[type='time'].pl-input:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}

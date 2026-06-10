@@ -1,0 +1,29 @@
+/* ── LocutoresPage ── */
+
+.rad-locutores__search {
+  margin-bottom: var(--space-6);
+}
+
+.rad-locutores__search .pl-input {
+  max-width: 320px;
+}
+
+/* ── Modal de locutor ── */
+.rad-locutor-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.rad-locutor-modal__full {
+  grid-column: 1 / -1;
+}
+
+.rad-locutor-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-default);
+  margin-top: var(--space-5);
+}

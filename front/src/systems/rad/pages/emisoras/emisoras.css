@@ -1,0 +1,57 @@
+/* ── EmisorasPage ── */
+
+.rad-emisoras__search {
+  display: flex;
+  gap: var(--space-3);
+  margin-bottom: var(--space-6);
+}
+
+.rad-emisoras__search .pl-input {
+  flex: 1;
+  max-width: 320px;
+}
+
+/* ── Modal de emisora ── */
+.rad-emisora-modal__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.rad-emisora-modal__full {
+  grid-column: 1 / -1;
+}
+
+.rad-emisora-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-default);
+  margin-top: var(--space-5);
+}
+
+/* ── Chips de comercializadoras en tabla ── */
+.rad-emisoras__coms {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+}
+
+/* ── Checkboxes para multiselect de comercializadoras ── */
+.rad-com-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) 0;
+  cursor: pointer;
+  font-size: var(--fs-body-s);
+  color: var(--fg-2);
+}
+
+.rad-com-check input[type='checkbox'] {
+  accent-color: var(--blue-500);
+  width: 16px;
+  height: 16px;
+  cursor: pointer;
+}

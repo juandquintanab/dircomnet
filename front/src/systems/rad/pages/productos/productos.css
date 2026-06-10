@@ -1,0 +1,193 @@
+/* ── ProductosPage / ProductoForm / ProductoDetalle ── */
+
+/* Filtros */
+.rad-filtros__grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-4);
+  margin-bottom: var(--space-4);
+}
+
+.rad-filtros__limpiar {
+  margin-top: var(--space-2);
+}
+
+/* Secciones del formulario */
+.rad-seccion {
+  padding: var(--space-6) 0;
+  border-bottom: 1px solid var(--border-default);
+}
+
+.rad-seccion:last-child {
+  border-bottom: none;
+}
+
+.rad-seccion > .label-section {
+  display: block;
+  margin-bottom: var(--space-5);
+}
+
+.rad-seccion__grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+  margin-bottom: var(--space-5);
+}
+
+.rad-seccion__full {
+  grid-column: 1 / -1;
+}
+
+.rad-seccion__inline {
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+}
+
+/* Locutores */
+.rad-locutores-lista {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin-bottom: var(--space-4);
+}
+
+.rad-locutor-row {
+  display: grid;
+  grid-template-columns: 1fr 160px 40px;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--surface-card-alt);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3) var(--space-4);
+}
+
+.rad-locutor-row__nombre {
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+}
+
+.rad-locutor-sugerencias {
+  margin-top: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  background: var(--surface-card);
+  box-shadow: var(--shadow-md);
+}
+
+.rad-locutor-sugerencias__item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--fs-body-s);
+  color: var(--fg-2);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.rad-locutor-sugerencias__item:hover {
+  background: var(--blue-50);
+  color: var(--blue-700);
+}
+
+.rad-locutor-sugerencias__meta {
+  color: var(--fg-3);
+  font-weight: var(--fw-regular);
+}
+
+/* Horarios */
+.rad-horario-row {
+  display: grid;
+  grid-template-columns: 1fr 120px 120px 40px;
+  align-items: flex-end;
+  gap: var(--space-3);
+  margin-bottom: var(--space-3);
+}
+
+/* Comercializadoras — chips seleccionables */
+.rad-com-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* Métricas */
+.rad-metricas {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-5);
+  align-items: center;
+  margin-top: var(--space-5);
+}
+
+.rad-metricas__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rad-metricas__val {
+  font-size: var(--fs-body-m);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+}
+
+.rad-metricas__val--strong {
+  font-size: var(--fs-body-l);
+  font-weight: var(--fw-bold);
+  color: var(--navy-900);
+}
+
+.rad-metricas__val--ahorro {
+  color: var(--status-success);
+}
+
+.rad-metricas__divider {
+  width: 1px;
+  height: 40px;
+  background: var(--border-default);
+  align-self: center;
+}
+
+/* ProductoForm — header fijo con acciones */
+.rad-form-header {
+  position: sticky;
+  top: 0;
+  z-index: var(--z-sticky, 10);
+  background: var(--surface-card);
+  border-bottom: 1px solid var(--border-default);
+  padding: var(--space-4) var(--space-6);
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  margin-bottom: var(--space-6);
+}
+
+.rad-form-header__titulo {
+  flex: 1;
+  font-size: var(--fs-body-l);
+  font-weight: var(--fw-bold);
+  color: var(--fg-1);
+}
+
+/* ProductoDetalle — bloque de info */
+.rad-detalle-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-5);
+}
+
+.rad-detalle-full {
+  grid-column: 1 / -1;
+}
+
+/* Tabla de productos — columnas métricas */
+.rad-col-num {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}

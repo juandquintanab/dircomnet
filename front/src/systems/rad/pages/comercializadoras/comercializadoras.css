@@ -1,0 +1,19 @@
+/* ── ComercializadorasPage ── */
+
+.rad-coms__search {
+  margin-bottom: var(--space-6);
+}
+
+.rad-coms__search .pl-input {
+  max-width: 320px;
+}
+
+/* ── Modal de comercializadora ── */
+.rad-com-modal__actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-3);
+  padding-top: var(--space-5);
+  border-top: 1px solid var(--border-default);
+  margin-top: var(--space-5);
+}

@@ -1,0 +1,33 @@
+# Dependencias
+node_modules/
+.pnp
+.pnp.js
+
+# Build output
+dist/
+dist-ssr/
+build/
+
+# Variables de entorno — NUNCA subir
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+.env.production
+
+# Cache de Vite
+.vite/
+vite.config.js.timestamp-*
+
+# Cache de ESLint
+.eslintcache
+
+# TypeScript (por si se agrega luego)
+*.tsbuildinfo
+
+# Coverage
+coverage/
+
+# Misc
+.cache/

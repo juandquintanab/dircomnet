@@ -1,0 +1,108 @@
+/* ── INF — Administrador de Influencers ────────────────────────────────────
+   Estilos específicos del módulo INF. Consume solo tokens de colors_and_type.css.
+   No duplicar clases que ya existen en kit.css.
+   ─────────────────────────────────────────────────────────────────────────── */
+
+/* ── Display field (read-only) ── */
+.inf-field { display: flex; flex-direction: column; gap: var(--space-1); }
+.inf-field__val { font-size: var(--fs-body-s); color: var(--fg-2); line-height: 1.5; }
+.inf-field__val--lg { font-size: var(--fs-body-m); font-weight: var(--fw-semi); color: var(--fg-1); }
+
+/* ── Section head for table-wrap cards ── */
+.inf-table-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-5) var(--space-6);
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* ── Filter bar grid ── */
+.inf-filterbar {
+  display: grid;
+  grid-template-columns: 1fr 200px 200px;
+  gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+}
+
+/* ── States ── */
+.inf-loading,
+.inf-empty,
+.inf-error {
+  padding: var(--space-12) var(--space-6);
+  text-align: center;
+  font-size: var(--fs-body-s);
+}
+.inf-loading { color: var(--slate-400); }
+.inf-empty   { color: var(--slate-400); }
+.inf-error   { color: var(--status-error); }
+
+/* ── Placeholder page ── */
+.inf-placeholder {
+  padding: var(--space-12);
+  text-align: center;
+  color: var(--slate-400);
+  font-size: var(--fs-body-s);
+}
+
+/* ── Page stack (vertical gap between cards) ── */
+.inf-page-stack { display: flex; flex-direction: column; gap: var(--space-6); }
+
+/* ── Form card ── */
+.inf-form-card { display: flex; flex-direction: column; gap: var(--space-5); }
+.inf-form-section { display: flex; flex-direction: column; gap: var(--space-4); }
+.inf-form-section-title {
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-bold);
+  text-transform: uppercase;
+  letter-spacing: var(--tracking-label);
+  color: var(--blue-500);
+  padding-bottom: var(--space-3);
+  border-bottom: 1px solid var(--border-default);
+}
+
+/* ── Native select (para key-value options: influencer_id, marca_id) ── */
+.inf-select-native {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-lg);
+  padding: 11px 14px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-m);
+  color: var(--fg-1);
+  cursor: pointer;
+  outline: none;
+}
+.inf-select-native:focus {
+  border-color: var(--blue-500);
+  box-shadow: var(--shadow-focus);
+}
+.inf-select-native:disabled {
+  background: var(--slate-100);
+  color: var(--slate-400);
+  cursor: not-allowed;
+}
+
+/* ── Acciones inline en filas de tabla ── */
+.inf-row-actions { display: flex; gap: var(--space-1); }
+
+/* ── Agregar participante (CampanaDetail) ── */
+.inf-add-participant {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-4);
+  align-items: end;
+  padding: var(--space-5) var(--space-6) var(--space-6);
+  border-top: 1px solid var(--border-default);
+}
+
+/* ── Responsive ── */
+@media (max-width: 1024px) {
+  .inf-filterbar { grid-template-columns: 1fr 1fr; }
+  .inf-filterbar > *:first-child { grid-column: 1 / -1; }
+}
+@media (max-width: 767px) {
+  .inf-filterbar { grid-template-columns: 1fr; }
+}

@@ -1,0 +1,166 @@
+/* ── PropuestasPage / PropuestaDetalle ── */
+
+/* Totales del resumen */
+.rad-propuesta-totales {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-6);
+  align-items: center;
+  margin-top: var(--space-5);
+  padding: var(--space-4) var(--space-5);
+}
+
+.rad-propuesta-totales__item {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.rad-propuesta-totales__val {
+  font-size: var(--fs-body-l);
+  font-weight: var(--fw-bold);
+  color: var(--fg-1);
+}
+
+.rad-propuesta-totales__val--ahorro {
+  color: var(--status-success);
+}
+
+.rad-propuesta-totales__sep {
+  width: 1px;
+  height: 40px;
+  background: var(--border-default);
+  align-self: center;
+}
+
+/* Columna precio fuerte en tabla */
+.rad-col-strong {
+  font-weight: var(--fw-bold);
+  color: var(--fg-1);
+}
+
+/* Cambio de estado inline */
+.rad-estado-select {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.rad-estado-select select {
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--fg-2);
+  background: var(--surface-card);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+  padding: 6px 10px;
+  outline: none;
+  cursor: pointer;
+}
+
+.rad-estado-select select:focus {
+  border-color: var(--border-focus);
+  box-shadow: var(--shadow-focus);
+}
+
+/* Drawer — lista seleccionada */
+.pl-drawer-scrim {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 38, 77, 0.35);
+  backdrop-filter: blur(2px);
+  z-index: var(--z-modal, 400);
+  display: flex;
+  justify-content: flex-end;
+}
+
+.rad-lista-drawer {
+  display: flex;
+  flex-direction: column;
+  width: 420px;
+  max-width: 100vw;
+  height: 100%;
+  overflow: hidden;
+  animation: pl-slide-in 0.2s var(--ease-standard, ease) both;
+}
+
+.pl-drawer__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-5) var(--space-6);
+}
+
+.pl-drawer__footer {
+  padding: var(--space-5) var(--space-6);
+  border-top: 1px solid var(--border-default);
+  background: var(--surface-card);
+}
+
+/* Items de la lista seleccionada */
+.rad-lista-items {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.rad-lista-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3) var(--space-4);
+  background: var(--surface-card-alt);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+}
+
+.rad-lista-item__info {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  flex: 1;
+  min-width: 0;
+}
+
+.rad-lista-item__nombre {
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rad-lista-item__derecha {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex-shrink: 0;
+}
+
+.rad-lista-item__precio {
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+/* Badge sidebar */
+.rad-sidebar-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 99px;
+  background: rgba(255, 255, 255, 0.18);
+  font-size: 11px;
+  font-weight: var(--fw-bold);
+  color: var(--white);
+  margin-left: auto;
+}
