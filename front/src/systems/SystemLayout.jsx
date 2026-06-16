@@ -15,7 +15,7 @@ function SystemTopbar({ sistema }) {
         <button
           type="button"
           className="pl-topbar__crumb-link"
-          onClick={() => navigate('/')}
+          onClick={() => navigate('/portal')}
         >
           Portal
         </button>
