@@ -72,38 +72,99 @@ async function getParticipanteById(id) {
 
 // ── personas ──────────────────────────────────────────────────────────────────
 
-async function getAllPersonas({ buscar, frecuencia, page = 1, limit = 50 } = {}) {
+// Semi-join por IDS del catálogo (filtro): devuelve un Set de persona_id desde una
+// tabla pivote cuyo FK esté en `ids`. `.in()` da lógica OR dentro del mismo filtro.
+async function _personaIdsPorIds(tablaPivote, fkColumn, ids) {
+  const { data, error } = await supabase
+    .from(tablaPivote)
+    .select('persona_id')
+    .in(fkColumn, ids)
+  if (error) throw error
+  return new Set((data || []).map((r) => r.persona_id))
+}
+
+// Semi-join por NOMBRE del catálogo (búsqueda): join !inner + ilike sobre la
+// tabla relacionada. Devuelve un Set de persona_id.
+async function _personaIdsPorNombre(tablaPivote, relacion, term) {
+  const { data, error } = await supabase
+    .from(tablaPivote)
+    .select(`persona_id, ${relacion}!inner(nombre)`)
+    .ilike(`${relacion}.nombre`, `%${term}%`)
+  if (error) throw error
+  return new Set((data || []).map((r) => r.persona_id))
+}
+
+async function getAllPersonas({
+  buscar, frecuencia, medio = [], fuente = [], stakeholder = [], tipo_pr = [], page = 1, limit = 50,
+} = {}) {
   const from = (page - 1) * limit
   const to   = from + limit - 1
 
+  // 1. Filtros relacionales (AND entre categorías, OR dentro de cada una): cada filtro
+  //    aporta un conjunto de persona_id sobre el universo COMPLETO; luego se intersectan.
+  const conjuntos = []
+  if (medio.length)       conjuntos.push(await _personaIdsPorIds('persona_medios',       'medio_id',       medio))
+  if (fuente.length)      conjuntos.push(await _personaIdsPorIds('persona_fuentes',      'fuente_id',      fuente))
+  if (stakeholder.length) conjuntos.push(await _personaIdsPorIds('persona_stakeholders', 'stakeholder_id', stakeholder))
+  if (tipo_pr.length)     conjuntos.push(await _personaIdsPorIds('persona_tipos_pr',     'tipo_pr_id',     tipo_pr))
+
+  // 2. Búsqueda combinada (OR): nombre del periodista, o nombre de medio, o nombre de fuente.
+  if (buscar?.trim()) {
+    const term = buscar.trim()
+    const [{ data: porNombre, error: errN }, idsMedio, idsFuente] = await Promise.all([
+      supabase.from('personas').select('id').ilike('nombre', `%${term}%`),
+      _personaIdsPorNombre('persona_medios',  'medios',  term),
+      _personaIdsPorNombre('persona_fuentes', 'fuentes', term),
+    ])
+    if (errN) throw errN
+    conjuntos.push(new Set([...(porNombre || []).map((r) => r.id), ...idsMedio, ...idsFuente]))
+  }
+
+  // 3. Intersección de todos los conjuntos activos → universo de ids permitidos.
+  let idsPermitidos = null
+  if (conjuntos.length) {
+    idsPermitidos = conjuntos.reduce(
+      (acc, s) => (acc === null ? s : new Set([...acc].filter((id) => s.has(id)))),
+      null
+    )
+    // Sin coincidencias: cortar antes de la query principal.
+    if (idsPermitidos.size === 0)
+      return { data: [], total: 0, page: Number(page), limit: Number(limit) }
+  }
+
+  // 4. Query principal: paginación (LIMIT/OFFSET) sobre el conjunto YA filtrado,
+  //    con count exacto del total filtrado.
+  //    Select acotado a lo que muestra la tabla del listado: nombre, medios,
+  //    fuentes y correos. El resto de campos sigue disponible en getPersonaById.
+  //    (frecuencia se sigue usando como filtro server-side aunque no se seleccione.)
   let q = supabase
     .from('personas')
     .select(
-      `id, nombre, frecuencia, influencia,
-       correos(direccion),
-       persona_medios!left(medios(id, nombre, tipo_medio)),
+      `id, nombre,
+       correos(direccion, es_principal),
+       persona_medios!left(medios(id, nombre)),
        persona_fuentes!left(fuentes(id, nombre))`,
       { count: 'exact' }
     )
     .order('nombre')
     .range(from, to)
 
-  if (buscar?.trim())  q = q.ilike('nombre', `%${buscar.trim()}%`)
-  if (frecuencia)      q = q.eq('frecuencia', frecuencia)
+  if (idsPermitidos) q = q.in('id', [...idsPermitidos])
+  if (frecuencia)    q = q.eq('frecuencia', frecuencia)
 
   const { data, error, count } = await q
   if (error) throw error
 
   const personas = (data || []).map((p) => ({
-    id:         p.id,
-    nombre:     p.nombre,
-    frecuencia: p.frecuencia,
-    influencia: p.influencia,
-    correos:    [...new Set((p.correos || []).map((c) => c.direccion).filter(Boolean))],
-    medios:     (p.persona_medios || []).map((r) => r.medios).filter(Boolean)
-                  .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i),
-    fuentes:    (p.persona_fuentes || []).map((r) => r.fuentes).filter(Boolean)
-                  .filter((f, i, arr) => arr.findIndex((x) => x.id === f.id) === i),
+    id:      p.id,
+    nombre:  p.nombre,
+    correos: (p.correos || []).filter((c) => c.direccion)
+               .filter((c, i, arr) => arr.findIndex((x) => x.direccion === c.direccion) === i)
+               .map((c) => ({ direccion: c.direccion, es_principal: !!c.es_principal })),
+    medios:  (p.persona_medios || []).map((r) => r.medios).filter(Boolean)
+               .filter((m, i, arr) => arr.findIndex((x) => x.id === m.id) === i),
+    fuentes: (p.persona_fuentes || []).map((r) => r.fuentes).filter(Boolean)
+               .filter((f, i, arr) => arr.findIndex((x) => x.id === f.id) === i),
   }))
 
   return { data: personas, total: count ?? 0, page: Number(page), limit: Number(limit) }
@@ -195,7 +256,7 @@ async function sincronizarRelaciones(
     ops.push(supabase.from('telefonos').insert(telefonos.map((t) => ({ ...t, persona_id: personaId }))))
   if (redes_sociales.length)
     ops.push(supabase.from('redes_sociales').insert(redes_sociales.map((r) => ({
-      plataforma: r.plataforma, usuario: r.usuario, persona_id: personaId,
+      tipo_cuenta: r.tipo_cuenta, nombre_usuario: r.nombre_usuario, persona_id: personaId,
     }))))
   if (medios.length)
     ops.push(supabase.from('persona_medios').insert(medios.map((m) => ({
@@ -516,66 +577,6 @@ async function upsertValoresParticipante(participanteId, valores) {
   }
 }
 
-// ── giras ─────────────────────────────────────────────────────────────────────
-
-async function getAllGiras({ estado, page = 1, limit = 50 } = {}) {
-  const from = (page - 1) * limit
-  const to   = from + limit - 1
-
-  let q = supabase
-    .from('giras')
-    .select('*, gira_contactos(id)', { count: 'exact' })
-    .order('created_at', { ascending: false })
-    .range(from, to)
-
-  if (estado) q = q.eq('estado', estado)
-
-  const { data, error, count } = await q
-  if (error) throw error
-  return { data: data || [], total: count ?? 0, page: Number(page), limit: Number(limit) }
-}
-
-async function getGiraById(id) {
-  return unwrap(
-    await supabase
-      .from('giras')
-      .select(`
-        *,
-        gira_contactos(
-          id, justificacion, estado,
-          personas(id, nombre, cedula, persona_medios(medios(id, nombre, tipo_medio)))
-        )
-      `)
-      .eq('id', id)
-      .single()
-  )
-}
-
-async function createGira(payload) {
-  return unwrap(await supabase.from('giras').insert(payload).select().single())
-}
-
-async function updateGira(id, payload) {
-  return unwrap(
-    await supabase.from('giras').update(payload).eq('id', id).select().single()
-  )
-}
-
-async function addContactoAGira(giraId, payload) {
-  return unwrap(
-    await supabase
-      .from('gira_contactos')
-      .insert({ gira_id: giraId, ...payload })
-      .select()
-      .single()
-  )
-}
-
-async function removeContactoDeGira(id) {
-  const { error } = await supabase.from('gira_contactos').delete().eq('id', id)
-  if (error) throw error
-}
-
 // ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -588,6 +589,4 @@ module.exports = {
   copiarCamposDePlantillaALista,
   addParticipante, updateParticipante, removeParticipante,
   upsertValoresParticipante, getParticipanteById,
-  getAllGiras, getGiraById, createGira, updateGira,
-  addContactoAGira, removeContactoDeGira,
 }

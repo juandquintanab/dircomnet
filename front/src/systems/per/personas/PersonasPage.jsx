@@ -1,6 +1,7 @@
-import { useState, useEffect, useMemo, useCallback } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
-import { Button, Input, Select, EmptyDash, Chip, Icon } from '../../../components/primitives'
+import { Button, Input, Select, EmptyDash, Chip } from '../../../components/primitives'
+import MultiSelectDropdown from './MultiSelectDropdown'
 import {
   getPersonas,
   getMedios,
@@ -9,8 +10,10 @@ import {
   getTiposPr,
 } from '../lib/perQueries'
 
+// Filtros multivalor en la URL: coma-separados (?medios=1,2). String ↔ arreglo.
+const toArr = (s) => (s ? s.split(',') : [])
+
 const FRECUENCIA_OPTS = ['alta', 'media', 'baja', 'ocasional']
-const FRECUENCIA_TONE = { alta: 'green', media: 'blue', baja: 'yellow', ocasional: 'slate' }
 const LIMIT = 50
 
 export default function PersonasPage() {
@@ -19,11 +22,17 @@ export default function PersonasPage() {
 
   const q          = searchParams.get('q')          || ''
   const frecuencia = searchParams.get('frecuencia') || ''
-  const medioFiltro      = searchParams.get('medios')       || ''
-  const stakeholderFiltro = searchParams.get('stakeholders') || ''
-  const fuenteFiltro     = searchParams.get('fuentes')      || ''
-  const tipoPrFiltro     = searchParams.get('tipos_pr')     || ''
+  // Params crudos (string) — se usan como deps por valor; se parsean a arreglo al usar.
+  const mediosParam       = searchParams.get('medios')       || ''
+  const fuentesParam      = searchParams.get('fuentes')      || ''
+  const stakeholdersParam = searchParams.get('stakeholders') || ''
+  const tiposPrParam      = searchParams.get('tipos_pr')     || ''
   const page = Math.max(1, parseInt(searchParams.get('page') || '1', 10))
+
+  const mediosSel       = toArr(mediosParam)
+  const fuentesSel      = toArr(fuentesParam)
+  const stakeholdersSel = toArr(stakeholdersParam)
+  const tiposPrSel      = toArr(tiposPrParam)
 
   const [data, setData]     = useState([])
   const [total, setTotal]   = useState(0)
@@ -45,22 +54,25 @@ export default function PersonasPage() {
   const cargar = useCallback(() => {
     setLoading(true)
     setError(null)
-    getPersonas({ buscar: q, frecuencia, page, limit: LIMIT })
+    getPersonas({
+      buscar: q,
+      frecuencia,
+      medio:       toArr(mediosParam),
+      fuente:      toArr(fuentesParam),
+      stakeholder: toArr(stakeholdersParam),
+      tipo_pr:     toArr(tiposPrParam),
+      page,
+      limit: LIMIT,
+    })
       .then(({ data, total }) => { setData(data); setTotal(total) })
       .catch((e) => setError(e.message))
       .finally(() => setLoading(false))
-  }, [q, frecuencia, page])
+    // Deps por valor (strings de la URL), no por referencia de arreglo → sin refetch infinito.
+  }, [q, frecuencia, mediosParam, fuentesParam, stakeholdersParam, tiposPrParam, page])
 
   useEffect(() => { cargar() }, [cargar])
 
-  // Client-side filter on medios (returned in list query)
-  const filtrados = useMemo(() => {
-    if (!medioFiltro) return data
-    return data.filter((p) =>
-      p.persona_medios?.some((pm) => pm.medios?.nombre === medioFiltro)
-    )
-  }, [data, medioFiltro])
-
+  // Filtro single (q, frecuencia): set/borra un valor escalar.
   const setParam = (key, val) => {
     const params = new URLSearchParams(searchParams)
     if (val) params.set(key, val)
@@ -69,15 +81,22 @@ export default function PersonasPage() {
     setSearchParams(params, { replace: true })
   }
 
-  const removeFilter = (key) => {
+  // Filtro multivalor: persiste el arreglo como coma-separado (o borra el param).
+  const setFilterArray = (key, arr) => {
     const params = new URLSearchParams(searchParams)
-    params.delete(key)
+    if (arr.length) params.set(key, arr.join(','))
+    else params.delete(key)
     params.delete('page')
     setSearchParams(params, { replace: true })
   }
 
+  // Quita un único valor de un filtro multivalor (chip removible).
+  const removeFilterValue = (key, val) => {
+    setFilterArray(key, toArr(searchParams.get(key) || '').filter((x) => x !== val))
+  }
+
   const copiarCorreos = () => {
-    const correos = filtrados
+    const correos = data
       .flatMap((p) => p.correos?.map((c) => c.direccion) ?? [])
       .filter(Boolean)
     if (!correos.length) return
@@ -86,18 +105,20 @@ export default function PersonasPage() {
 
   const totalPages = Math.ceil(total / LIMIT)
 
-  const activeFilters = [
-    ...(frecuencia    ? [{ key: 'frecuencia',   label: frecuencia }]      : []),
-    ...(medioFiltro   ? [{ key: 'medios',        label: medioFiltro }]     : []),
-    ...(stakeholderFiltro ? [{ key: 'stakeholders', label: stakeholderFiltro }] : []),
-    ...(fuenteFiltro  ? [{ key: 'fuentes',       label: fuenteFiltro }]    : []),
-    ...(tipoPrFiltro  ? [{ key: 'tipos_pr',      label: tipoPrFiltro }]    : []),
-  ]
+  // Mapa id → nombre por catálogo, para etiquetar los chips de filtros activos.
+  const nombrePorId = (items) => Object.fromEntries(items.map((i) => [String(i.id), i.nombre]))
+  const mapaMedios       = nombrePorId(catalogos.medios)
+  const mapaFuentes      = nombrePorId(catalogos.fuentes)
+  const mapaStakeholders = nombrePorId(catalogos.stakeholders)
+  const mapaTiposPr      = nombrePorId(catalogos.tiposPr)
 
-  const mediosNombres    = catalogos.medios.map((m) => m.nombre)
-  const stakeholdersNom  = catalogos.stakeholders.map((s) => s.nombre)
-  const fuentesNom       = catalogos.fuentes.map((f) => f.nombre)
-  const tiposPrNom       = catalogos.tiposPr.map((t) => t.nombre)
+  const activeFilters = [
+    ...(frecuencia ? [{ id: 'frecuencia', label: frecuencia, onRemove: () => setParam('frecuencia', '') }] : []),
+    ...mediosSel.map((v)       => ({ id: `medios:${v}`,       label: mapaMedios[v] ?? v,       onRemove: () => removeFilterValue('medios', v) })),
+    ...fuentesSel.map((v)      => ({ id: `fuentes:${v}`,      label: mapaFuentes[v] ?? v,      onRemove: () => removeFilterValue('fuentes', v) })),
+    ...stakeholdersSel.map((v) => ({ id: `stakeholders:${v}`, label: mapaStakeholders[v] ?? v, onRemove: () => removeFilterValue('stakeholders', v) })),
+    ...tiposPrSel.map((v)      => ({ id: `tipos_pr:${v}`,     label: mapaTiposPr[v] ?? v,      onRemove: () => removeFilterValue('tipos_pr', v) })),
+  ]
 
   return (
     <>
@@ -121,32 +142,32 @@ export default function PersonasPage() {
           <Input
             value={q}
             onChange={(v) => setParam('q', v)}
-            placeholder="Buscar por nombre…"
+            placeholder="Buscar por nombre, medio o fuente…"
             leadingIcon="search"
           />
-          <Select
-            value={medioFiltro}
-            onChange={(v) => setParam('medios', v)}
-            options={mediosNombres}
-            placeholder="Medio"
+          <MultiSelectDropdown
+            label="Medio"
+            options={catalogos.medios}
+            selected={mediosSel}
+            onChange={(arr) => setFilterArray('medios', arr)}
           />
-          <Select
-            value={stakeholderFiltro}
-            onChange={(v) => setParam('stakeholders', v)}
-            options={stakeholdersNom}
-            placeholder="Stakeholder"
+          <MultiSelectDropdown
+            label="Stakeholder"
+            options={catalogos.stakeholders}
+            selected={stakeholdersSel}
+            onChange={(arr) => setFilterArray('stakeholders', arr)}
           />
-          <Select
-            value={fuenteFiltro}
-            onChange={(v) => setParam('fuentes', v)}
-            options={fuentesNom}
-            placeholder="Fuente"
+          <MultiSelectDropdown
+            label="Fuente"
+            options={catalogos.fuentes}
+            selected={fuentesSel}
+            onChange={(arr) => setFilterArray('fuentes', arr)}
           />
-          <Select
-            value={tipoPrFiltro}
-            onChange={(v) => setParam('tipos_pr', v)}
-            options={tiposPrNom}
-            placeholder="Tipo PR"
+          <MultiSelectDropdown
+            label="Tipo PR"
+            options={catalogos.tiposPr}
+            selected={tiposPrSel}
+            onChange={(arr) => setFilterArray('tipos_pr', arr)}
           />
           <Select
             value={frecuencia}
@@ -160,7 +181,7 @@ export default function PersonasPage() {
           <div className="pl-active-filters">
             <span className="lbl">Filtros</span>
             {activeFilters.map((f) => (
-              <Chip key={f.key} tone="slate" removable onRemove={() => removeFilter(f.key)}>
+              <Chip key={f.id} tone="slate" removable onRemove={f.onRemove}>
                 {f.label}
               </Chip>
             ))}
@@ -174,15 +195,15 @@ export default function PersonasPage() {
           <>
             <div className="pl-table-meta">
               <span className="left">
-                <b>{medioFiltro ? filtrados.length : total}</b>{' '}
-                {(medioFiltro ? filtrados.length : total) === 1 ? 'periodista' : 'periodistas'}
-                {totalPages > 1 && !medioFiltro && (
+                <b>{total}</b>{' '}
+                {total === 1 ? 'periodista' : 'periodistas'}
+                {totalPages > 1 && (
                   <span style={{ color: 'var(--slate-400)', marginLeft: 'var(--space-2)' }}>
                     · Página {page} de {totalPages}
                   </span>
                 )}
               </span>
-              {totalPages > 1 && !medioFiltro && (
+              {totalPages > 1 && (
                 <div className="pl-row">
                   <Button
                     variant="secondary"
@@ -209,71 +230,65 @@ export default function PersonasPage() {
                 <tr>
                   <th className="per-col-nombre">Nombre</th>
                   <th>Medios</th>
-                  <th className="per-col-fuentes">Fuentes</th>
+                  <th>Fuentes</th>
                   <th>Correos</th>
-                  <th className="per-col-telefonos">Teléfonos</th>
-                  <th>Frecuencia</th>
-                  <th className="per-col-tendencia">Tendencia</th>
                 </tr>
               </thead>
               <tbody>
-                {filtrados.length === 0 ? (
+                {data.length === 0 ? (
                   <tr>
-                    <td colSpan={7}>
+                    <td colSpan={4}>
                       <div className="per-empty">Sin resultados</div>
                     </td>
                   </tr>
                 ) : (
-                  filtrados.map((p) => (
-                    <tr
-                      key={p.id}
-                      style={{ cursor: 'pointer' }}
-                      onClick={() => navigate(`/per/personas/${p.id}`)}
-                    >
-                      <td className="name per-col-nombre">
-                        {p.nombre}
-                        {!p.activo && (
-                          <Chip tone="slate" style={{ marginLeft: 'var(--space-2)' }}>
-                            Inactivo
-                          </Chip>
-                        )}
-                      </td>
-                      <td>
-                        <div className="per-contact-chips">
-                          {p.persona_medios?.length
-                            ? p.persona_medios.slice(0, 2).map((pm) => (
-                                <Chip key={pm.medios?.id} tone="blue">
-                                  {pm.medios?.nombre}
-                                </Chip>
-                              ))
-                            : <EmptyDash />}
-                          {p.persona_medios?.length > 2 && (
-                            <Chip tone="slate">+{p.persona_medios.length - 2}</Chip>
+                  data.map((p) => {
+                    // Opción A: la celda muestra solo el correo principal (o el primero);
+                    // todos los correos siguen en la respuesta (para "Copiar correos" y el detalle).
+                    const correoPrincipal = p.correos?.find((c) => c.es_principal) ?? p.correos?.[0]
+                    return (
+                      <tr
+                        key={p.id}
+                        style={{ cursor: 'pointer' }}
+                        onClick={() => navigate(`/per/personas/${p.id}`)}
+                      >
+                        <td className="name per-col-nombre">
+                          {p.nombre}
+                          {!p.activo && (
+                            <Chip tone="slate" style={{ marginLeft: 'var(--space-2)' }}>
+                              Inactivo
+                            </Chip>
                           )}
-                        </div>
-                      </td>
-                      <td className="per-col-fuentes"><EmptyDash /></td>
-                      <td>
-                        {p.correos?.length
-                          ? p.correos[0].direccion
-                          : <EmptyDash />}
-                        {p.correos?.length > 1 && (
-                          <span style={{ color: 'var(--slate-400)', fontSize: 'var(--fs-body-xs)', marginLeft: 4 }}>
-                            +{p.correos.length - 1}
-                          </span>
-                        )}
-                      </td>
-                      <td className="per-col-telefonos"><EmptyDash /></td>
-                      <td>
-                        {p.frecuencia
-                          ? <Chip tone={FRECUENCIA_TONE[p.frecuencia] ?? 'slate'}>{p.frecuencia}</Chip>
-                          : <EmptyDash />}
-                      </td>
-                      <td className="per-col-tendencia">
-                        {p.tendencia ?? <EmptyDash />}
-                      </td>
-                    </tr>
-                  ))
+                        </td>
+                        <td>
+                          {p.persona_medios?.length ? (
+                            <div className="per-contact-chips">
+                              {p.persona_medios.map((pm) => (
+                                <Chip key={pm.medios?.id} tone="blue">{pm.medios?.nombre}</Chip>
+                              ))}
+                            </div>
+                          ) : <EmptyDash />}
+                        </td>
+                        <td>
+                          {p.persona_fuentes?.length ? (
+                            <div className="per-contact-chips">
+                              {p.persona_fuentes.map((pf) => (
+                                <Chip key={pf.fuentes?.id} tone="slate">{pf.fuentes?.nombre}</Chip>
+                              ))}
+                            </div>
+                          ) : <EmptyDash />}
+                        </td>
+                        <td>
+                          {correoPrincipal ? correoPrincipal.direccion : <EmptyDash />}
+                          {p.correos?.length > 1 && (
+                            <span style={{ color: 'var(--slate-400)', fontSize: 'var(--fs-body-xs)', marginLeft: 4 }}>
+                              +{p.correos.length - 1}
+                            </span>
+                          )}
+                        </td>
+                      </tr>
+                    )
+                  })
                 )}
               </tbody>
             </table>

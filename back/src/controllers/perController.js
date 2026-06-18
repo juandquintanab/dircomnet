@@ -6,7 +6,20 @@ const w = (fn) => async (req, res, next) => {
 
 // ── personas ──────────────────────────────────────────────────────────────────
 
-const listarPersonas  = w(async (req, res) => res.json(await svc.listarPersonas(req.query)))
+// Filtros multivalor llegan coma-separados (?medio=1,2,3) → arreglo de ids.
+const _arr = (v) =>
+  v == null || v === '' ? [] : String(v).split(',').map((s) => s.trim()).filter(Boolean)
+
+const listarPersonas  = w(async (req, res) => {
+  const { buscar, frecuencia, medio, fuente, stakeholder, tipo_pr, page, limit } = req.query
+  res.json(await svc.listarPersonas({
+    buscar, frecuencia, page, limit,
+    medio:       _arr(medio),
+    fuente:      _arr(fuente),
+    stakeholder: _arr(stakeholder),
+    tipo_pr:     _arr(tipo_pr),
+  }))
+})
 const obtenerPersona  = w(async (req, res) => res.json(await svc.obtenerPersona(req.params.id)))
 const crearPersona    = w(async (req, res) => res.status(201).json(await svc.crearPersona(req.body)))
 const editarPersona   = w(async (req, res) => res.json(await svc.editarPersona(req.params.id, req.body)))
@@ -54,23 +67,6 @@ const quitarParticipante  = w(async (req, res) => {
   res.status(204).end()
 })
 
-// ── giras ─────────────────────────────────────────────────────────────────────
-
-const listarGiras       = w(async (req, res) => res.json(await svc.listarGiras(req.query)))
-const obtenerGira       = w(async (req, res) => res.json(await svc.obtenerGira(req.params.id)))
-const crearGira         = w(async (req, res) => res.status(201).json(await svc.crearGira(req.body)))
-const editarGira        = w(async (req, res) => res.json(await svc.editarGira(req.params.id, req.body)))
-const cambiarEstadoGira = w(async (req, res) =>
-  res.json(await svc.cambiarEstadoGira(req.params.id, req.body.estado))
-)
-const agregarContactoAGira = w(async (req, res) =>
-  res.status(201).json(await svc.agregarContactoAGira(req.params.id, req.body))
-)
-const quitarContactoDeGira = w(async (req, res) => {
-  await svc.quitarContactoDeGira(req.params.id, req.params.cid)
-  res.status(204).end()
-})
-
 // ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -79,6 +75,4 @@ module.exports = {
   listarPlantillas, obtenerPlantilla, crearPlantilla, editarPlantilla,
   listarListas, obtenerLista, crearLista, editarLista, cambiarEstadoLista,
   listarParticipantes, agregarParticipante, editarParticipante, quitarParticipante,
-  listarGiras, obtenerGira, crearGira, editarGira, cambiarEstadoGira,
-  agregarContactoAGira, quitarContactoDeGira,
 }

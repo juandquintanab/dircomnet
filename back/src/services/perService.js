@@ -3,7 +3,6 @@ const model = require('../models/perModel')
 const FRECUENCIAS_VALIDAS = ['nula', 'baja', 'media', 'alta']
 const TIPOS_LISTA         = ['convocatoria', 'gifting', 'gira', 'otra']
 const ESTADOS_LISTA       = ['borrador', 'activa', 'cerrada', 'cancelada']
-const ESTADOS_GIRA        = ['borrador', 'enviada', 'aprobada', 'rechazada', 'en_planificacion', 'ejecutada', 'cerrada']
 const ORIGENES_CAMPO      = ['persona', 'personalizado']
 const TIPOS_CAMPO         = ['texto', 'numero', 'fecha', 'booleano', 'select']
 
@@ -59,7 +58,17 @@ function buildPayloadPersona(body) {
 async function listarPersonas(query = {}) {
   const page  = Math.max(1, parseInt(query.page, 10)  || 1)
   const limit = Math.min(200, Math.max(1, parseInt(query.limit, 10) || 50))
-  return model.getAllPersonas({ buscar: query.buscar, frecuencia: query.frecuencia, page, limit })
+  const arr = (v) => (Array.isArray(v) ? v : [])
+  return model.getAllPersonas({
+    buscar:      query.buscar,
+    frecuencia:  query.frecuencia,
+    medio:       arr(query.medio),
+    fuente:      arr(query.fuente),
+    stakeholder: arr(query.stakeholder),
+    tipo_pr:     arr(query.tipo_pr),
+    page,
+    limit,
+  })
 }
 
 async function obtenerPersona(id) {
@@ -204,65 +213,6 @@ async function quitarParticipante(listaId, pid) {
   return model.removeParticipante(pid)
 }
 
-// ── giras ─────────────────────────────────────────────────────────────────────
-
-async function listarGiras(query = {}) {
-  const page  = Math.max(1, parseInt(query.page, 10)  || 1)
-  const limit = Math.min(200, Math.max(1, parseInt(query.limit, 10) || 50))
-  return model.getAllGiras({ estado: query.estado, page, limit })
-}
-
-async function obtenerGira(id) { return model.getGiraById(id) }
-
-async function crearGira(body) {
-  const { nombre, marca, campana, descripcion, fecha_inicio, fecha_fin } = body
-  if (!nombre?.trim()) throw bad('El nombre es obligatorio')
-  return model.createGira({
-    nombre:      nombre.trim(),
-    marca:       marca ?? null,
-    campana:     campana ?? null,
-    descripcion: descripcion ?? null,
-    fecha_inicio: fecha_inicio ?? null,
-    fecha_fin:   fecha_fin ?? null,
-  })
-}
-
-async function editarGira(id, body) {
-  await model.getGiraById(id)
-  const { nombre, marca, campana, descripcion, fecha_inicio, fecha_fin } = body
-  if (!nombre?.trim()) throw bad('El nombre es obligatorio')
-  return model.updateGira(id, {
-    nombre:      nombre.trim(),
-    marca:       marca ?? null,
-    campana:     campana ?? null,
-    descripcion: descripcion ?? null,
-    fecha_inicio: fecha_inicio ?? null,
-    fecha_fin:   fecha_fin ?? null,
-    updated_at:  new Date().toISOString(),
-  })
-}
-
-async function cambiarEstadoGira(id, estado) {
-  if (!ESTADOS_GIRA.includes(estado))
-    throw bad(`Estado inválido. Valores: ${ESTADOS_GIRA.join(', ')}`)
-  await model.getGiraById(id)
-  return model.updateGira(id, { estado, updated_at: new Date().toISOString() })
-}
-
-async function agregarContactoAGira(giraId, body) {
-  await model.getGiraById(giraId)
-  const { persona_id, justificacion, estado } = body
-  if (!persona_id) throw bad('persona_id es obligatorio')
-  return model.addContactoAGira(giraId, {
-    persona_id, justificacion: justificacion ?? null, estado: estado ?? null,
-  })
-}
-
-async function quitarContactoDeGira(giraId, cid) {
-  await model.getGiraById(giraId)
-  return model.removeContactoDeGira(cid)
-}
-
 // ── exports ───────────────────────────────────────────────────────────────────
 
 module.exports = {
@@ -271,6 +221,4 @@ module.exports = {
   listarPlantillas, obtenerPlantilla, crearPlantilla, editarPlantilla,
   listarListas, obtenerLista, crearLista, editarLista, cambiarEstadoLista,
   agregarParticipante, editarParticipante, quitarParticipante,
-  listarGiras, obtenerGira, crearGira, editarGira, cambiarEstadoGira,
-  agregarContactoAGira, quitarContactoDeGira,
 }

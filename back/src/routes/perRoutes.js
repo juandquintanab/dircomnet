@@ -33,13 +33,4 @@ router.post('/listas/:id/participantes',          ctrl.agregarParticipante)
 router.put('/listas/:id/participantes/:pid',      ctrl.editarParticipante)
 router.delete('/listas/:id/participantes/:pid',   ctrl.quitarParticipante)
 
-// ── giras ─────────────────────────────────────────────────────────────────────
-router.get('/giras',                       ctrl.listarGiras)
-router.post('/giras',                      ctrl.crearGira)
-router.get('/giras/:id',                   ctrl.obtenerGira)
-router.put('/giras/:id',                   ctrl.editarGira)
-router.patch('/giras/:id/estado',          ctrl.cambiarEstadoGira)
-router.post('/giras/:id/contactos',        ctrl.agregarContactoAGira)
-router.delete('/giras/:id/contactos/:cid', ctrl.quitarContactoDeGira)
-
 module.exports = router

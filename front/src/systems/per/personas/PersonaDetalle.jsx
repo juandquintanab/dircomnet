@@ -243,7 +243,7 @@ export default function PersonaDetalle() {
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', marginTop: 'var(--space-2)' }}>
                 {p.redes_sociales.map((r) => (
                   <span key={r.id} className="per-field__val">
-                    {r.plataforma}: {r.usuario}
+                    {r.tipo_cuenta}: {r.nombre_usuario}
                   </span>
                 ))}
               </div>

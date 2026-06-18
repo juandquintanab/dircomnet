@@ -26,6 +26,99 @@
   padding: var(--space-5) var(--space-6) var(--space-6);
 }
 
+/* ── MultiSelectDropdown (filtros multivalor con buscador) ── */
+.per-msd { position: relative; }
+.per-msd__btn {
+  width: 100%;
+  background: var(--white);
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-lg);
+  padding: 11px 14px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-m);
+  color: var(--fg-1);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  cursor: pointer;
+}
+.per-msd__btn:hover { border-color: var(--slate-400); }
+.per-msd.is-open .per-msd__btn { border-color: var(--blue-500); box-shadow: var(--shadow-focus); }
+.per-msd__ph { color: var(--slate-400); }
+.per-msd__badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 6px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--blue-500);
+  color: var(--white);
+  font-size: var(--fs-body-xs);
+  font-weight: var(--fw-bold);
+}
+.per-msd__panel {
+  position: absolute;
+  top: calc(100% + 4px);
+  left: 0;
+  right: 0;
+  background: var(--white);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  padding: 6px;
+  z-index: 20;
+  min-width: 200px;
+}
+.per-msd__search {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--border-default);
+  color: var(--slate-400);
+}
+.per-msd__search input {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-family: var(--font-sans);
+  font-size: 14px;
+  color: var(--fg-1);
+}
+.per-msd__list { max-height: 240px; overflow-y: auto; padding: 4px 0; }
+.per-msd__opt {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 14px;
+  color: var(--fg-1);
+  cursor: pointer;
+}
+.per-msd__opt:hover { background: var(--slate-100); }
+.per-msd__opt input { cursor: pointer; }
+.per-msd__empty { padding: 12px 10px; font-size: 14px; color: var(--slate-400); text-align: center; }
+.per-msd__clear {
+  width: 100%;
+  margin-top: 4px;
+  padding: 8px;
+  background: transparent;
+  border: none;
+  border-top: 1px solid var(--border-default);
+  font-family: var(--font-sans);
+  font-size: 13px;
+  font-weight: var(--fw-semi);
+  color: var(--blue-500);
+  cursor: pointer;
+}
+.per-msd__clear:hover { background: var(--slate-50); }
+
 /* ── States ── */
 .per-loading,
 .per-empty,
@@ -159,14 +252,11 @@
 .per-search-result__nombre { font-size: var(--fs-body-s); font-weight: var(--fw-semi); color: var(--fg-1); }
 .per-search-result__meta { font-size: var(--fs-body-xs); color: var(--slate-400); }
 
-/* ── Columnas ocultas según breakpoint (tabla de periodistas) ── */
+/* ── Responsive filterbar / tabla de periodistas ── */
 @media (max-width: 1024px) {
   .per-filterbar { grid-template-columns: 1fr 1fr 1fr 1fr; }
-  .per-col-fuentes,
-  .per-col-tendencia { display: none; }
 }
 @media (max-width: 767px) {
   .per-filterbar { grid-template-columns: 1fr 1fr; }
-  .per-col-telefonos { display: none; }
   .per-col-nombre { position: sticky; left: 0; background: var(--white); z-index: 1; }
 }

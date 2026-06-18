@@ -100,7 +100,7 @@ export default function PersonaForm() {
   // Listas dinámicas
   const [correos, setCorreos]     = useState([])   // { _key, direccion, es_principal }
   const [telefonos, setTelefonos] = useState([])   // { _key, numero, es_principal }
-  const [redes, setRedes]         = useState([])   // { _key, plataforma, usuario }
+  const [redes, setRedes]         = useState([])   // { _key, tipo_cuenta, nombre_usuario }
 
   // Catálogos — seleccionados
   const [mediosSel, setMediosSel]             = useState([])   // { id, nombre }
@@ -150,7 +150,7 @@ export default function PersonaForm() {
         )
         setRedes(
           (p.redes_sociales ?? []).map((r) => ({
-            _key: crypto.randomUUID(), plataforma: r.plataforma ?? '', usuario: r.usuario ?? '',
+            _key: crypto.randomUUID(), tipo_cuenta: r.tipo_cuenta ?? '', nombre_usuario: r.nombre_usuario ?? '',
           }))
         )
         setMediosSel(
@@ -208,7 +208,7 @@ export default function PersonaForm() {
     setTelefonos((prev) => prev.map((t) => ({ ...t, es_principal: t._key === _key })))
 
   const agregarRed = () =>
-    setRedes((prev) => [...prev, { _key: crypto.randomUUID(), plataforma: '', usuario: '' }])
+    setRedes((prev) => [...prev, { _key: crypto.randomUUID(), tipo_cuenta: '', nombre_usuario: '' }])
 
   const actualizarRed = (_key, campo, valor) =>
     setRedes((prev) => prev.map((r) => r._key === _key ? { ...r, [campo]: valor } : r))
@@ -253,7 +253,7 @@ export default function PersonaForm() {
       await sincronizarRelacionesPersona(personaId, {
         correos:       correos.map(({ direccion, es_principal }) => ({ direccion, es_principal })),
         telefonos:     telefonos.map(({ numero, es_principal }) => ({ numero, es_principal })),
-        redes_sociales: redes.map(({ plataforma, usuario }) => ({ plataforma, usuario })),
+        redes_sociales: redes.map(({ tipo_cuenta, nombre_usuario }) => ({ tipo_cuenta, nombre_usuario })),
         medios:        mediosSel,
         stakeholders:  stakeholdersSel,
         fuentes:       fuentesSel,
@@ -434,8 +434,8 @@ export default function PersonaForm() {
                     <Field label="Plataforma">
                       <select
                         className="per-select-native"
-                        value={r.plataforma}
-                        onChange={(e) => actualizarRed(r._key, 'plataforma', e.target.value)}
+                        value={r.tipo_cuenta}
+                        onChange={(e) => actualizarRed(r._key, 'tipo_cuenta', e.target.value)}
                       >
                         <option value="">Seleccionar…</option>
                         {PLATAFORMAS.map((p) => <option key={p} value={p}>{p}</option>)}
@@ -443,8 +443,8 @@ export default function PersonaForm() {
                     </Field>
                     <Field label="Usuario / Handle">
                       <Input
-                        value={r.usuario}
-                        onChange={(v) => actualizarRed(r._key, 'usuario', v)}
+                        value={r.nombre_usuario}
+                        onChange={(v) => actualizarRed(r._key, 'nombre_usuario', v)}
                         placeholder="@usuario"
                       />
                     </Field>

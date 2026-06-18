@@ -23,17 +23,16 @@ async function _api(method, path, body) {
 
 // ── Transformaciones ──────────────────────────────────────────────────────────
 
-// Persona del listado: correos planos → objetos, medios plano → persona_medios Supabase-style
+// Persona del listado: medios/fuentes planos → estilo Supabase anidado para la tabla.
+// La tabla solo muestra: nombre, medios, fuentes, correos (es_principal marca el principal).
 function mapPersonaListItem(p) {
   return {
-    id:             p.id,
-    nombre:         p.nombre,
-    activo:         p.activo ?? true,
-    frecuencia:     p.frecuencia,
-    influencia:     p.influencia,
-    tendencia:      p.tendencia,
-    correos:        (p.correos ?? []).map((dir) => ({ direccion: dir })),
-    persona_medios: (p.medios  ?? []).map((m)   => ({ medios: m })),
+    id:              p.id,
+    nombre:          p.nombre,
+    activo:          p.activo ?? true,
+    correos:         (p.correos ?? []).map((c) => ({ direccion: c.direccion, es_principal: c.es_principal })),
+    persona_medios:  (p.medios  ?? []).map((m) => ({ medios: m })),
+    persona_fuentes: (p.fuentes ?? []).map((f) => ({ fuentes: f })),
   }
 }
 
@@ -123,15 +122,19 @@ let _lastPlantillaPayload = {}
 // Lista activa (para upsertValorParticipante y removeParticipante que no reciben listaId)
 let _currentListaId = null
 let _currentLista   = null
-// Gira activa (para removeContactoDeGira que no recibe giraId)
-let _currentGiraId  = null
 
 // ── Personas ──────────────────────────────────────────────────────────────────
 
-export const getPersonas = async ({ buscar, frecuencia, page = 1, limit = 50 } = {}) => {
+export const getPersonas = async ({
+  buscar, frecuencia, medio = [], fuente = [], stakeholder = [], tipo_pr = [], page = 1, limit = 50,
+} = {}) => {
   const params = new URLSearchParams()
-  if (buscar?.trim())  params.set('buscar', buscar.trim())
-  if (frecuencia)      params.set('frecuencia', frecuencia)
+  if (buscar?.trim())   params.set('buscar', buscar.trim())
+  if (frecuencia)       params.set('frecuencia', frecuencia)
+  if (medio.length)       params.set('medio', medio.join(','))
+  if (fuente.length)      params.set('fuente', fuente.join(','))
+  if (stakeholder.length) params.set('stakeholder', stakeholder.join(','))
+  if (tipo_pr.length)     params.set('tipo_pr', tipo_pr.join(','))
   params.set('page',  String(page))
   params.set('limit', String(limit))
   const res = await _api('GET', `/api/per/personas?${params}`)
@@ -271,27 +274,4 @@ export const upsertValorParticipante = async (participanteId, campoListaId, valo
     comentario: part?.comentario  ?? null,
     valores:    [{ campo_lista_id: campoListaId, valor }],
   })
-}
-
-// ── Giras ─────────────────────────────────────────────────────────────────────
-
-export const getGiras = async ({ estado, page = 1, limit = 50 } = {}) => {
-  const params = new URLSearchParams()
-  if (estado) params.set('estado', estado)
-  params.set('page',  String(page))
-  params.set('limit', String(limit))
-  return _api('GET', `/api/per/giras?${params}`)
-}
-
-export const getGiraById = async (id) => {
-  _currentGiraId = id
-  return _api('GET', `/api/per/giras/${id}`)
-}
-
-export const updateGiraEstado = async (id, estado) => {
-  return _api('PATCH', `/api/per/giras/${id}/estado`, { estado })
-}
-
-export const removeContactoDeGira = async (contactoId) => {
-  await _api('DELETE', `/api/per/giras/${_currentGiraId}/contactos/${contactoId}`)
 }
