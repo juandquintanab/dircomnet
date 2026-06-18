@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { Button, Field, Input } from '../../../components/primitives'
+import { useBreadcrumbs } from '../../SystemLayout'
 import { getPlantillas, createLista } from '../lib/perQueries'
 
 const TIPO_LABEL = { convocatoria: 'Convocatoria', gifting: 'Gifting', gira: 'Gira', otra: 'Otra' }
@@ -14,6 +15,11 @@ export default function ListaForm() {
   const [errores, setErrores]         = useState({})
   const [guardando, setGuardando]     = useState(false)
   const [errorApi, setErrorApi]       = useState(null)
+
+  useBreadcrumbs([
+    { label: 'Listas', to: '/per/listas' },
+    { label: 'Nueva lista' },
+  ])
 
   useEffect(() => {
     getPlantillas()

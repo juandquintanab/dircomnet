@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Field, Input, Chip, Icon } from '../../../components/primitives'
+import { useBreadcrumbs } from '../../SystemLayout'
 import {
   getPlantillaById,
   createPlantilla,
@@ -54,6 +55,11 @@ export default function PlantillaForm() {
   const [cargando, setCargando]   = useState(esEdicion)
   const [guardando, setGuardando] = useState(false)
   const [errorApi, setErrorApi]   = useState(null)
+
+  useBreadcrumbs([
+    { label: 'Plantillas', to: '/per/plantillas' },
+    { label: esEdicion ? 'Editar plantilla' : 'Nueva plantilla' },
+  ])
 
   // Drag-and-drop: índice fuente almacenado en ref para evitar re-renders
   const dragIndex  = useRef(null)

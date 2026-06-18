@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useParams, useNavigate } from 'react-router-dom'
 import { Button, EmptyDash, Chip, Icon, Input } from '../../../components/primitives'
+import { useBreadcrumbs } from '../../SystemLayout'
 import {
   getListaById,
   updateListaEstado,
@@ -53,6 +54,11 @@ export default function ListaDetalle() {
   const [buscando, setBuscando]           = useState(false)
   const [agregando, setAgregando]         = useState(null)  // persona_id en curso
   const [cambiandoEstado, setCambiandoEstado] = useState(false)
+
+  useBreadcrumbs([
+    { label: 'Listas', to: '/per/listas' },
+    { label: lista?.nombre || 'Lista' },
+  ])
 
   // ── Carga ──
 

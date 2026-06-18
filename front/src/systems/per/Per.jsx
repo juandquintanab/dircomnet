@@ -21,6 +21,7 @@ function PerSidebar() {
       <div className="pl-sidebar__group">PER</div>
       <NavLink
         to="/per/personas"
+        title="Periodistas"
         className={({ isActive }) => `pl-sidebar__item${isActive ? ' is-active' : ''}`}
       >
         <Icon name="users" size={16} />
@@ -28,6 +29,7 @@ function PerSidebar() {
       </NavLink>
       <NavLink
         to="/per/listas"
+        title="Listas"
         className={({ isActive }) => `pl-sidebar__item${isActive ? ' is-active' : ''}`}
       >
         <Icon name="list" size={16} />
@@ -35,6 +37,7 @@ function PerSidebar() {
       </NavLink>
       <NavLink
         to="/per/plantillas"
+        title="Plantillas"
         className={({ isActive }) => `pl-sidebar__item${isActive ? ' is-active' : ''}`}
       >
         <Icon name="file" size={16} />

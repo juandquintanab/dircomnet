@@ -1,9 +1,34 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, EmptyDash, Chip, Icon } from '../../../components/primitives'
+import { useBreadcrumbs } from '../../SystemLayout'
 import { getPersonaById, inactivarPersona } from '../lib/perQueries'
 
 const FRECUENCIA_TONE = { alta: 'green', media: 'blue', baja: 'yellow', ocasional: 'slate' }
+
+// Construye la URL del perfil a partir del tipo de cuenta + nombre de usuario.
+// Devuelve null cuando no se puede armar un link válido (tipo desconocido, usuario vacío).
+function buildRedUrl(tipo, usuarioRaw) {
+  const usuario = (usuarioRaw ?? '').trim()
+  if (!usuario) return null
+  // El usuario ya viene como URL completa guardada
+  if (/^https?:\/\//i.test(usuario)) return usuario
+  // Guardó el dominio sin protocolo (ej. "www.instagram.com/usuario")
+  if (/^[\w.-]+\.[a-z]{2,}\//i.test(usuario)) return `https://${usuario}`
+  // Normaliza el handle: quita @ inicial y barras sobrantes
+  const handle = usuario.replace(/^@+/, '').replace(/\/+$/, '')
+  if (!handle) return null
+  switch ((tipo ?? '').trim().toLowerCase()) {
+    case 'instagram': return `https://instagram.com/${handle}`
+    case 'x':
+    case 'twitter':   return `https://x.com/${handle}`
+    case 'facebook':  return `https://facebook.com/${handle}`
+    case 'linkedin':  return `https://www.linkedin.com/in/${handle}`
+    case 'youtube':   return `https://www.youtube.com/@${handle}`
+    case 'tiktok':    return `https://www.tiktok.com/@${handle}`
+    default:          return null
+  }
+}
 
 function Field({ label, children }) {
   return (
@@ -68,6 +93,11 @@ export default function PersonaDetalle() {
       .finally(() => setLoading(false))
   }, [id])
 
+  useBreadcrumbs([
+    { label: 'Directorio de personas', to: '/per/personas' },
+    { label: persona?.nombre || 'Periodista' },
+  ])
+
   const handleInactivar = async () => {
     setInactivando(true)
     try {
@@ -108,14 +138,7 @@ export default function PersonaDetalle() {
         {/* ── Encabezado ── */}
         <div className="pl-page__head">
           <div className="pl-page__title">
-            <h1>
-              {p.nombre}
-              {!p.activo && (
-                <Chip tone="slate" style={{ marginLeft: 'var(--space-3)', verticalAlign: 'middle' }}>
-                  Inactivo
-                </Chip>
-              )}
-            </h1>
+            <h1>{p.nombre}</h1>
             <span className="meta"><b>PER</b> · Difusión y PR</span>
           </div>
           <div className="pl-page__actions">
@@ -241,11 +264,26 @@ export default function PersonaDetalle() {
               <div className="per-field__val"><EmptyDash /></div>
             ) : (
               <div style={{ display: 'flex', flexDirection: 'column', gap: 'var(--space-1)', marginTop: 'var(--space-2)' }}>
-                {p.redes_sociales.map((r) => (
-                  <span key={r.id} className="per-field__val">
-                    {r.tipo_cuenta}: {r.nombre_usuario}
-                  </span>
-                ))}
+                {p.redes_sociales.map((r) => {
+                  const url = buildRedUrl(r.tipo_cuenta, r.nombre_usuario)
+                  return (
+                    <span key={r.id} className="per-field__val">
+                      {r.tipo_cuenta}:{' '}
+                      {url ? (
+                        <a
+                          className="per-red-link"
+                          href={url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          {r.nombre_usuario}
+                        </a>
+                      ) : (
+                        r.nombre_usuario
+                      )}
+                    </span>
+                  )
+                })}
               </div>
             )}
           </div>

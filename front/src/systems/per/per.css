@@ -8,6 +8,10 @@
 .per-field__val { font-size: var(--fs-body-s); color: var(--fg-2); line-height: 1.5; }
 .per-field__val--lg { font-size: var(--fs-body-m); font-weight: var(--fw-semi); color: var(--fg-1); }
 
+/* Link de red social en el detalle de persona */
+.per-red-link { color: var(--blue-500); text-decoration: none; }
+.per-red-link:hover { text-decoration: underline; }
+
 /* ── Section head for table-wrap cards ── */
 .per-table-head {
   display: flex;
@@ -182,7 +186,22 @@
 .per-row-actions { display: flex; gap: var(--space-1); }
 
 /* ── Chips de contacto (correos, teléfonos, redes) ── */
-.per-contact-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.per-contact-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+
+/* Indicador "+N" para listas de chips truncadas (medios, fuentes, stakeholders) */
+.per-chip-more {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 8px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--slate-100);
+  color: var(--slate-600);
+  font-size: var(--fs-body-xs);
+  font-weight: var(--fw-semi);
+  cursor: default;
+  white-space: nowrap;
+}
 
 /* ── PlantillaForm — campo rows con drag-and-drop ── */
 .per-campo-row {
@@ -251,6 +270,75 @@
 .per-search-result:hover { background: var(--blue-50); }
 .per-search-result__nombre { font-size: var(--fs-body-s); font-weight: var(--fw-semi); color: var(--fg-1); }
 .per-search-result__meta { font-size: var(--fs-body-xs); color: var(--slate-400); }
+
+/* ── Paginación (números navegables, arriba y abajo de la tabla) ── */
+.per-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+.per-pagination__nums {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+.per-page-num {
+  min-width: 32px;
+  height: 32px;
+  padding: 0 8px;
+  border: 1px solid var(--slate-300);
+  border-radius: var(--radius-md);
+  background: var(--white);
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--fg-1);
+  cursor: pointer;
+  transition: background var(--dur-micro) var(--ease-standard), border-color var(--dur-micro) var(--ease-standard);
+}
+.per-page-num:hover { background: var(--slate-50); border-color: var(--slate-400); }
+.per-page-num:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.per-page-num.is-active {
+  background: var(--blue-500);
+  border-color: var(--blue-500);
+  color: var(--white);
+  cursor: default;
+}
+.per-page-ellipsis {
+  min-width: 24px;
+  text-align: center;
+  color: var(--slate-400);
+  font-size: var(--fs-body-s);
+  user-select: none;
+}
+
+/* La barra inferior separa con borde superior en vez de inferior. */
+.pl-table-wrap .pl-table-meta:last-child {
+  border-bottom: none;
+  border-top: 1px solid var(--border-default);
+}
+
+/* ── Toast (feedback de "Copiar correos") ── */
+.per-toast {
+  position: fixed;
+  bottom: var(--space-6);
+  right: var(--space-6);
+  z-index: var(--z-toast);
+  padding: var(--space-4) var(--space-5);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-md);
+  font-size: var(--fs-body-s);
+  font-weight: var(--fw-semi);
+  color: var(--white);
+  background: var(--navy-900);
+  animation: per-toast-in var(--dur-base) var(--ease-standard);
+}
+.per-toast--error { background: var(--status-error); }
+
+@keyframes per-toast-in {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
 
 /* ── Responsive filterbar / tabla de periodistas ── */
 @media (max-width: 1024px) {

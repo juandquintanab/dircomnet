@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { Button, Field, Input, Select, Icon, EmptyDash } from '../../../components/primitives'
+import { useBreadcrumbs } from '../../SystemLayout'
 import {
   getPersonaById,
   createPersona,
@@ -96,6 +97,11 @@ export default function PersonaForm() {
   const [cargando, setCargando]   = useState(esEdicion)
   const [guardando, setGuardando] = useState(false)
   const [errorApi, setErrorApi]   = useState(null)
+
+  useBreadcrumbs([
+    { label: 'Directorio de personas', to: '/per/personas' },
+    { label: esEdicion ? 'Editar persona' : 'Nueva persona' },
+  ])
 
   // Listas dinámicas
   const [correos, setCorreos]     = useState([])   // { _key, direccion, es_principal }

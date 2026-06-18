@@ -5,15 +5,30 @@ html, body, #root { height: 100%; }
 body { margin: 0; background: var(--surface-app); color: var(--fg-2); font-family: var(--font-sans); font-size: var(--fs-body-m); -webkit-font-smoothing: antialiased; }
 
 /* ───────── Shell layout ───────── */
-.pl-shell { display: grid; grid-template-columns: var(--sidebar-width) 1fr; grid-template-rows: var(--header-height) 1fr; min-height: 100vh; }
+.pl-shell { display: grid; grid-template-columns: var(--sidebar-width) 1fr; grid-template-rows: var(--header-height) 1fr; min-height: 100vh; transition: grid-template-columns var(--dur-fast, 0.2s) var(--ease-standard, ease); }
+.pl-shell.is-collapsed { grid-template-columns: var(--sidebar-width-collapsed) 1fr; }
 .pl-shell__topbar  { grid-column: 1 / -1; grid-row: 1; }
 .pl-shell__sidebar { grid-column: 1; grid-row: 2; }
-.pl-shell__main    { grid-column: 2; grid-row: 2; min-width: 0; }
+.pl-shell__main    { grid-column: 2; grid-row: 2; min-width: 0; display: flex; flex-direction: column; }
+.pl-shell__main > .pl-page { flex: 1 1 auto; min-width: 0; }
+
+/* ── Breadcrumb de módulo (bajo el breadcrumb del portal) ── */
+.pl-subcrumb { display: flex; align-items: center; flex-wrap: wrap; gap: 6px; padding: 10px var(--page-gutter); background: var(--surface-card); border-bottom: 1px solid var(--border-default); }
+.pl-subcrumb__seg { display: inline-flex; align-items: center; gap: 6px; color: var(--slate-400); }
+.pl-subcrumb__link { background: transparent; border: none; padding: 0; font-family: var(--font-sans); font-size: 13px; color: var(--fg-2); cursor: pointer; line-height: 1; }
+.pl-subcrumb__link:hover { color: var(--blue-500); text-decoration: underline; }
+.pl-subcrumb__link:focus-visible { outline: none; box-shadow: var(--shadow-focus); border-radius: var(--radius-sm); }
+.pl-subcrumb__current { font-size: 13px; font-weight: 700; color: var(--fg-1); }
 
 /* ───────── TopBar ───────── */
 .pl-topbar { background: var(--navy-900); color: var(--white); height: var(--header-height); display: flex; align-items: center; padding: 0 var(--space-6); gap: var(--space-5); position: relative; }
 .pl-topbar::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 4px; background: var(--blue-500); }
 /* logo-blanco-ep.png ya es blanco sobre transparente — sin filtros */
+.pl-topbar__toggle { flex: none; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.1); color: var(--white); width: 36px; height: 36px; border-radius: var(--radius-md); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.pl-topbar__toggle:hover { background: rgba(255,255,255,0.16); }
+.pl-topbar__toggle:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+.pl-topbar__toggle-icon { display: inline-flex; transition: transform var(--dur-fast, 0.2s) var(--ease-standard, ease); }
+.pl-topbar__toggle-icon.is-expanded { transform: rotate(180deg); }
 .pl-topbar__logo { height: 28px; }
 .pl-topbar__platform-name { font-size: var(--fs-body-m); font-weight: var(--fw-bold); color: var(--white); }
 .pl-topbar__crumb { color: rgba(255,255,255,0.62); font-size: 13px; display: flex; align-items: center; gap: 6px; }
@@ -38,6 +53,14 @@ body { margin: 0; background: var(--surface-app); color: var(--fg-2); font-famil
 .pl-sidebar__count { margin-left: auto; background: rgba(255,255,255,0.14); font-size: 11px; padding: 2px 7px; border-radius: var(--radius-pill); font-weight: 600; }
 .pl-sidebar__item.is-active .pl-sidebar__count { background: rgba(255,255,255,0.22); }
 .pl-sidebar__footer { margin-top: auto; padding: 16px 18px; border-top: 1px solid rgba(255,255,255,0.08); }
+.pl-sidebar__item .pl-icon { flex: none; }
+
+/* Estado colapsado — solo íconos centrados, sin texto.
+   El texto de los items va como nodo suelto: font-size:0 lo oculta sin afectar
+   al SVG del Icon (su tamaño es por atributo width/height). */
+.pl-shell.is-collapsed .pl-sidebar__item { justify-content: center; gap: 0; padding: 10px 0; font-size: 0; }
+.pl-shell.is-collapsed .pl-sidebar__group { font-size: 0; padding: 10px 0 2px; }
+.pl-shell.is-collapsed .pl-sidebar__count { display: none; }
 
 /* ───────── Page header ───────── */
 .pl-page { padding: 28px 32px 48px; }

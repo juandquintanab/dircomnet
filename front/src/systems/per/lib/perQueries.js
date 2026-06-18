@@ -24,7 +24,7 @@ async function _api(method, path, body) {
 // ── Transformaciones ──────────────────────────────────────────────────────────
 
 // Persona del listado: medios/fuentes planos → estilo Supabase anidado para la tabla.
-// La tabla solo muestra: nombre, medios, fuentes, correos (es_principal marca el principal).
+// La tabla muestra: nombre, medios, fuentes, correos (es_principal marca el principal).
 function mapPersonaListItem(p) {
   return {
     id:              p.id,
@@ -149,6 +149,27 @@ export const getPersonas = async ({
 export const getPersonaById = async (id) => {
   const data = await _api('GET', `/api/per/personas/${id}`)
   return mapPersonaDetail(data)
+}
+
+// Recorre TODO el universo filtrado (todas las páginas) y devuelve los correos
+// únicos, sin nulos ni vacíos. Usa el mismo endpoint paginado de getPersonas,
+// recorriendo en lotes hasta cubrir el total. `filtros` = mismos filtros de la tabla.
+export const getCorreosFiltrados = async (filtros = {}) => {
+  const limit = 200
+  const correos = new Set()
+  let page = 1
+  for (;;) {
+    const { data, total } = await getPersonas({ ...filtros, page, limit })
+    for (const p of data) {
+      for (const c of p.correos ?? []) {
+        const dir = c.direccion?.trim()
+        if (dir) correos.add(dir)
+      }
+    }
+    if (!data.length || page * limit >= total) break
+    page += 1
+  }
+  return [...correos]
 }
 
 // createPersona y updatePersona + sincronizarRelacionesPersona se ejecutan en secuencia

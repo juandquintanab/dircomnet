@@ -83,17 +83,6 @@ async function _personaIdsPorIds(tablaPivote, fkColumn, ids) {
   return new Set((data || []).map((r) => r.persona_id))
 }
 
-// Semi-join por NOMBRE del catálogo (búsqueda): join !inner + ilike sobre la
-// tabla relacionada. Devuelve un Set de persona_id.
-async function _personaIdsPorNombre(tablaPivote, relacion, term) {
-  const { data, error } = await supabase
-    .from(tablaPivote)
-    .select(`persona_id, ${relacion}!inner(nombre)`)
-    .ilike(`${relacion}.nombre`, `%${term}%`)
-  if (error) throw error
-  return new Set((data || []).map((r) => r.persona_id))
-}
-
 async function getAllPersonas({
   buscar, frecuencia, medio = [], fuente = [], stakeholder = [], tipo_pr = [], page = 1, limit = 50,
 } = {}) {
@@ -108,17 +97,9 @@ async function getAllPersonas({
   if (stakeholder.length) conjuntos.push(await _personaIdsPorIds('persona_stakeholders', 'stakeholder_id', stakeholder))
   if (tipo_pr.length)     conjuntos.push(await _personaIdsPorIds('persona_tipos_pr',     'tipo_pr_id',     tipo_pr))
 
-  // 2. Búsqueda combinada (OR): nombre del periodista, o nombre de medio, o nombre de fuente.
-  if (buscar?.trim()) {
-    const term = buscar.trim()
-    const [{ data: porNombre, error: errN }, idsMedio, idsFuente] = await Promise.all([
-      supabase.from('personas').select('id').ilike('nombre', `%${term}%`),
-      _personaIdsPorNombre('persona_medios',  'medios',  term),
-      _personaIdsPorNombre('persona_fuentes', 'fuentes', term),
-    ])
-    if (errN) throw errN
-    conjuntos.push(new Set([...(porNombre || []).map((r) => r.id), ...idsMedio, ...idsFuente]))
-  }
+  // 2. La búsqueda por texto filtra ÚNICAMENTE por el nombre del periodista
+  //    (se aplica directo a la query principal, abajo). No busca en medios,
+  //    fuentes, correos ni ningún otro campo.
 
   // 3. Intersección de todos los conjuntos activos → universo de ids permitidos.
   let idsPermitidos = null
@@ -151,6 +132,7 @@ async function getAllPersonas({
 
   if (idsPermitidos) q = q.in('id', [...idsPermitidos])
   if (frecuencia)    q = q.eq('frecuencia', frecuencia)
+  if (buscar?.trim()) q = q.ilike('nombre', `%${buscar.trim()}%`)
 
   const { data, error, count } = await q
   if (error) throw error
