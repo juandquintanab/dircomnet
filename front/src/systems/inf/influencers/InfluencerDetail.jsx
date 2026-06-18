@@ -8,6 +8,7 @@ import {
 } from '../lib/infQueries'
 
 const TIPO_TONE = { nano: 'slate', micro: 'blue', macro: 'yellow', celebrity: 'green' }
+const toneTipo = (t) => TIPO_TONE[String(t).toLowerCase()] ?? 'slate'
 
 function formatFecha(d) {
   if (!d) return null
@@ -37,6 +38,38 @@ function Field({ label, children }) {
       <span className="label-field">{label}</span>
       <span className="inf-field__val">{children ?? <EmptyDash />}</span>
     </div>
+  )
+}
+
+function SeccionCard({ icon, title, action, children }) {
+  return (
+    <div className="pl-card" style={{ padding: 'var(--space-6)' }}>
+      <div className="pl-section__head">
+        <div className="pl-section__title">
+          <Icon name={icon} size={14} />
+          <span className="label-section">{title}</span>
+        </div>
+        {action}
+      </div>
+      <div className="pl-section__body">{children}</div>
+    </div>
+  )
+}
+
+// Sección de chips simples (temáticas, categorías, marcas comerciales/competencia)
+function ChipsSection({ icon, title, valores, tone = 'slate' }) {
+  return (
+    <SeccionCard icon={icon} title={title}>
+      {valores && valores.length > 0 ? (
+        <div className="inf-chips">
+          {valores.map((v) => (
+            <Chip key={v} tone={tone}>{v}</Chip>
+          ))}
+        </div>
+      ) : (
+        <span className="inf-field__val"><EmptyDash /></span>
+      )}
+    </SeccionCard>
   )
 }
 
@@ -93,49 +126,99 @@ export default function InfluencerDetail() {
       </div>
 
       {/* ── Datos generales ── */}
-      <div className="pl-card" style={{ padding: 'var(--space-6)' }}>
-        <div className="pl-section__head">
-          <div className="pl-section__title">
-            <Icon name="user" size={14} />
-            <span className="label-section">Datos generales</span>
-          </div>
-        </div>
-        <div className="pl-section__body">
-          <Field label="Tipo">
-            {inf.tipo ? (
-              <Chip tone={TIPO_TONE[inf.tipo] ?? 'slate'}>{inf.tipo}</Chip>
-            ) : null}
-          </Field>
-          <Field label="Categoría">{inf.categoria}</Field>
-          <Field label="Ciudad">{inf.ciudad}</Field>
-          <Field label="Seguidores">
-            {inf.seguidores != null ? formatSeguidores(inf.seguidores) : null}
-          </Field>
-          <Field label="Teléfono">{inf.telefono}</Field>
-          <Field label="Correo">{inf.correo}</Field>
-        </div>
-      </div>
+      <SeccionCard icon="user" title="Datos generales">
+        <Field label="Sexo">{inf.sexo}</Field>
+        <Field label="Ciudad">{inf.ciudad}</Field>
+        <Field label="Estado">{inf.estado}</Field>
+        <Field label="País">{inf.pais}</Field>
+        <Field label="Dirección">{inf.direccion}</Field>
+        <Field label="Descripción">{inf.descripcion}</Field>
+        <Field label="Comentarios">{inf.comentarios}</Field>
+      </SeccionCard>
 
       {/* ── Redes sociales ── */}
-      <div className="pl-card" style={{ padding: 'var(--space-6)' }}>
-        <div className="pl-section__head">
+      <div className="pl-card pl-table-wrap">
+        <div className="inf-table-head">
           <div className="pl-section__title">
             <Icon name="sparkles" size={14} />
             <span className="label-section">Redes sociales</span>
           </div>
         </div>
-        <div className="pl-section__body">
-          <Field label="Instagram">
-            {inf.usuario_instagram ? `@${inf.usuario_instagram}` : null}
-          </Field>
-          <Field label="TikTok">
-            {inf.usuario_tiktok ? `@${inf.usuario_tiktok}` : null}
-          </Field>
-          <Field label="YouTube">
-            {inf.usuario_youtube ? `@${inf.usuario_youtube}` : null}
-          </Field>
-        </div>
+        {inf.redes.length === 0 ? (
+          <div className="inf-empty">Sin redes registradas</div>
+        ) : (
+          <table className="pl-table">
+            <thead>
+              <tr>
+                <th>Plataforma</th>
+                <th>Usuario</th>
+                <th>Seguidores</th>
+                <th>Tipo</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inf.redes.map((r) => (
+                <tr key={r.id}>
+                  <td className="name">{r.plataforma || <EmptyDash />}</td>
+                  <td>{r.usuario ? `@${r.usuario}` : <EmptyDash />}</td>
+                  <td>{r.seguidores != null ? formatSeguidores(r.seguidores) : <EmptyDash />}</td>
+                  <td>{r.tipo ? <Chip tone={toneTipo(r.tipo)}>{r.tipo}</Chip> : <EmptyDash />}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
       </div>
+
+      {/* ── Contacto ── */}
+      <SeccionCard icon="user" title="Contacto">
+        <Field label="Teléfonos">
+          {inf.telefonos.length > 0 ? inf.telefonos.map((t) => t.numero).join(' · ') : null}
+        </Field>
+        <Field label="Correos">
+          {inf.correos.length > 0 ? inf.correos.map((c) => c.direccion).join(' · ') : null}
+        </Field>
+      </SeccionCard>
+
+      {/* ── Clasificación ── */}
+      <ChipsSection icon="grid" title="Temáticas" valores={inf.tematicas} tone="blue" />
+      <ChipsSection icon="grid" title="Categorías" valores={inf.categorias} tone="slate" />
+
+      {/* ── Marcas EP (internas) ── */}
+      <div className="pl-card pl-table-wrap">
+        <div className="inf-table-head">
+          <div className="pl-section__title">
+            <Icon name="building" size={14} />
+            <span className="label-section">Marcas Empresas Polar</span>
+          </div>
+        </div>
+        {inf.marcas_ep.length === 0 ? (
+          <div className="inf-empty">Sin marcas EP asociadas</div>
+        ) : (
+          <table className="pl-table">
+            <thead>
+              <tr>
+                <th>Marca</th>
+                <th>Estado</th>
+                <th>Embajador</th>
+              </tr>
+            </thead>
+            <tbody>
+              {inf.marcas_ep.map((m) => (
+                <tr key={m.marca_id}>
+                  <td className="name">{m.marca || <EmptyDash />}</td>
+                  <td>{m.estado || <EmptyDash />}</td>
+                  <td>{m.embajador ? <Chip tone="green">Sí</Chip> : <EmptyDash />}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {/* ── Marcas comerciales / competencia ── */}
+      <ChipsSection icon="building" title="Marcas comerciales" valores={inf.marcas_comerciales} tone="blue" />
+      <ChipsSection icon="building" title="Marcas de la competencia" valores={inf.marcas_competencia} tone="yellow" />
 
       {/* ── Contratos ── */}
       <div className="pl-card pl-table-wrap">

@@ -1,24 +1,207 @@
 import { supabase } from '../../../lib/supabase'
 
 // ── Influencers ──────────────────────────────────────────────────────────────
+//
+// La tabla `influencers` es plana solo en sus datos personales
+// (id, nombre, sexo, ciudad, estado, pais, direccion, descripcion, comentarios).
+// Todo lo demás vive en tablas relacionadas y se trae con embeds de PostgREST:
+//   redes_sociales_influencer (plataforma, usuario, seguidores, tipo → tipos_influencer)
+//   telefonos_influencer (numero) · correos_influencer (direccion)
+//   influencer_tematicas → tematicas · influencer_categorias → categorias_influencer
+//   influencer_marcas_ep → marcas (con estado + embajador)
+//   influencer_marcas_comerciales → marcas_comerciales
+//   influencer_marcas_competencia → marcas_competencia
 
-export const getInfluencers = async ({ tipo, categoria } = {}) => {
-  let query = supabase.from('influencers').select('*').order('nombre')
-  if (tipo) query = query.eq('tipo', tipo)
-  if (categoria) query = query.eq('categoria', categoria)
-  const { data, error } = await query
+const LIST_SELECT = `
+  id, nombre, sexo, ciudad, estado, pais,
+  redes_sociales_influencer ( plataforma, usuario, seguidores, tipos_influencer ( nombre ) ),
+  influencer_categorias ( categorias_influencer ( nombre ) )
+`
+
+const DETAIL_SELECT = `
+  *,
+  redes_sociales_influencer ( id, plataforma, usuario, seguidores, tipo_id, tipos_influencer ( nombre ) ),
+  telefonos_influencer ( id, numero ),
+  correos_influencer ( id, direccion ),
+  influencer_tematicas ( tematica_id, tematicas ( nombre ) ),
+  influencer_categorias ( categoria_id, categorias_influencer ( nombre ) ),
+  influencer_marcas_ep ( marca_id, estado, embajador, marcas ( nombre ) ),
+  influencer_marcas_comerciales ( marca_comercial_id, marcas_comerciales ( nombre ) ),
+  influencer_marcas_competencia ( marca_competencia_id, marcas_competencia ( nombre ) )
+`
+
+// Aplana la respuesta anidada de PostgREST a una forma cómoda para la UI.
+const mapInfluencer = (row) => {
+  if (!row) return row
+  const redes = (row.redes_sociales_influencer || []).map((r) => ({
+    id: r.id,
+    plataforma: r.plataforma,
+    usuario: r.usuario,
+    seguidores: r.seguidores,
+    tipo_id: r.tipo_id,
+    tipo: r.tipos_influencer?.nombre ?? null,
+  }))
+  const seguidores = redes.reduce(
+    (max, r) => (r.seguidores != null && r.seguidores > max ? r.seguidores : max),
+    0,
+  )
+  const tipos = [...new Set(redes.map((r) => r.tipo).filter(Boolean))]
+  const categorias = (row.influencer_categorias || [])
+    .map((c) => c.categorias_influencer?.nombre)
+    .filter(Boolean)
+  return {
+    ...row,
+    redes,
+    seguidores, // derivado: mayor número de seguidores entre sus redes
+    tipos, // derivado: tipos distintos (Macro, Micro…) presentes en sus redes
+    categorias,
+    telefonos: (row.telefonos_influencer || []).map((t) => ({ id: t.id, numero: t.numero })),
+    correos: (row.correos_influencer || []).map((c) => ({ id: c.id, direccion: c.direccion })),
+    tematicas: (row.influencer_tematicas || [])
+      .map((t) => t.tematicas?.nombre)
+      .filter(Boolean),
+    tematica_ids: (row.influencer_tematicas || []).map((t) => t.tematica_id),
+    categoria_ids: (row.influencer_categorias || []).map((c) => c.categoria_id),
+    marca_comercial_ids: (row.influencer_marcas_comerciales || []).map((m) => m.marca_comercial_id),
+    marca_competencia_ids: (row.influencer_marcas_competencia || []).map((m) => m.marca_competencia_id),
+    marcas_ep: (row.influencer_marcas_ep || []).map((m) => ({
+      marca_id: m.marca_id,
+      marca: m.marcas?.nombre ?? null,
+      estado: m.estado,
+      embajador: m.embajador,
+    })),
+    marcas_comerciales: (row.influencer_marcas_comerciales || [])
+      .map((m) => m.marcas_comerciales?.nombre)
+      .filter(Boolean),
+    marcas_competencia: (row.influencer_marcas_competencia || [])
+      .map((m) => m.marcas_competencia?.nombre)
+      .filter(Boolean),
+  }
+}
+
+export const getInfluencers = async () => {
+  const { data, error } = await supabase
+    .from('influencers')
+    .select(LIST_SELECT)
+    .order('nombre')
   if (error) throw error
-  return data
+  return (data || []).map(mapInfluencer)
 }
 
 export const getInfluencerById = async (id) => {
   const { data, error } = await supabase
     .from('influencers')
-    .select('*')
+    .select(DETAIL_SELECT)
     .eq('id', id)
     .single()
   if (error) throw error
+  return mapInfluencer(data)
+}
+
+// ── Catálogos del módulo INF ─────────────────────────────────────────────────
+
+export const getTiposInfluencer = async () => {
+  const { data, error } = await supabase.from('tipos_influencer').select('*').order('nombre')
+  if (error) throw error
   return data
+}
+
+export const getTematicas = async () => {
+  const { data, error } = await supabase.from('tematicas').select('*').order('nombre')
+  if (error) throw error
+  return data
+}
+
+export const getCategorias = async () => {
+  const { data, error } = await supabase
+    .from('categorias_influencer')
+    .select('*')
+    .order('nombre')
+  if (error) throw error
+  return data
+}
+
+export const getMarcasComerciales = async () => {
+  const { data, error } = await supabase.from('marcas_comerciales').select('*').order('nombre')
+  if (error) throw error
+  return data
+}
+
+export const getMarcasCompetencia = async () => {
+  const { data, error } = await supabase.from('marcas_competencia').select('*').order('nombre')
+  if (error) throw error
+  return data
+}
+
+// Sincroniza las relaciones N:M de un influencer con un patrón borrar+insertar.
+// `rel` ya viene normalizado desde el formulario.
+export const sincronizarRelacionesInfluencer = async (influencerId, rel = {}) => {
+  const ops = [
+    {
+      tabla: 'redes_sociales_influencer',
+      filas: (rel.redes || []).map((r) => ({
+        influencer_id: influencerId,
+        plataforma: r.plataforma || null,
+        usuario: r.usuario || null,
+        seguidores: r.seguidores ?? null,
+        tipo_id: r.tipo_id || null,
+      })),
+    },
+    {
+      tabla: 'telefonos_influencer',
+      filas: (rel.telefonos || []).map((numero) => ({ influencer_id: influencerId, numero })),
+    },
+    {
+      tabla: 'correos_influencer',
+      filas: (rel.correos || []).map((direccion) => ({ influencer_id: influencerId, direccion })),
+    },
+    {
+      tabla: 'influencer_tematicas',
+      filas: (rel.tematica_ids || []).map((tematica_id) => ({
+        influencer_id: influencerId,
+        tematica_id,
+      })),
+    },
+    {
+      tabla: 'influencer_categorias',
+      filas: (rel.categoria_ids || []).map((categoria_id) => ({
+        influencer_id: influencerId,
+        categoria_id,
+      })),
+    },
+    {
+      tabla: 'influencer_marcas_ep',
+      filas: (rel.marcas_ep || []).map((m) => ({
+        influencer_id: influencerId,
+        marca_id: m.marca_id,
+        estado: m.estado || null,
+        embajador: !!m.embajador,
+      })),
+    },
+    {
+      tabla: 'influencer_marcas_comerciales',
+      filas: (rel.marca_comercial_ids || []).map((marca_comercial_id) => ({
+        influencer_id: influencerId,
+        marca_comercial_id,
+      })),
+    },
+    {
+      tabla: 'influencer_marcas_competencia',
+      filas: (rel.marca_competencia_ids || []).map((marca_competencia_id) => ({
+        influencer_id: influencerId,
+        marca_competencia_id,
+      })),
+    },
+  ]
+
+  for (const { tabla, filas } of ops) {
+    const { error: delErr } = await supabase.from(tabla).delete().eq('influencer_id', influencerId)
+    if (delErr) throw delErr
+    if (filas.length) {
+      const { error: insErr } = await supabase.from(tabla).insert(filas)
+      if (insErr) throw insErr
+    }
+  }
 }
 
 export const getInfluencerContratos = async (id) => {
@@ -40,10 +223,15 @@ export const getInfluencerCampanas = async (id) => {
   return (data || []).map((r) => ({ ...r.campanas, contrato_id: r.contrato_id }))
 }
 
+// Solo columnas reales de la tabla `influencers` (datos personales).
+const BASE_COLS = ['nombre', 'sexo', 'ciudad', 'estado', 'pais', 'direccion', 'descripcion', 'comentarios']
+const soloBase = (data) =>
+  Object.fromEntries(Object.entries(data).filter(([k]) => BASE_COLS.includes(k)))
+
 export const createInfluencer = async (data) => {
   const { data: row, error } = await supabase
     .from('influencers')
-    .insert(data)
+    .insert(soloBase(data))
     .select()
     .single()
   if (error) throw error
@@ -53,7 +241,7 @@ export const createInfluencer = async (data) => {
 export const updateInfluencer = async (id, data) => {
   const { data: row, error } = await supabase
     .from('influencers')
-    .update(data)
+    .update(soloBase(data))
     .eq('id', id)
     .select()
     .single()

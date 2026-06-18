@@ -88,6 +88,69 @@
 /* ── Acciones inline en filas de tabla ── */
 .inf-row-actions { display: flex; gap: var(--space-1); }
 
+/* ── Chips (listado y detalle) ── */
+.inf-chips { display: flex; flex-wrap: wrap; gap: var(--space-2); align-items: center; }
+.inf-chip-more {
+  font-size: var(--fs-body-s);
+  color: var(--slate-400);
+  font-weight: var(--fw-semi);
+  cursor: default;
+}
+
+/* ── Chips toggle (selección múltiple en formularios) ── */
+.inf-chips--toggle { gap: var(--space-2); }
+.inf-toggle-chip {
+  border: 1px solid var(--slate-300);
+  background: var(--white);
+  color: var(--fg-2);
+  border-radius: var(--radius-pill);
+  padding: 6px 12px;
+  font-family: var(--font-sans);
+  font-size: var(--fs-body-s);
+  cursor: pointer;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+}
+.inf-toggle-chip:hover { border-color: var(--blue-500); color: var(--blue-500); }
+.inf-toggle-chip.is-active {
+  background: var(--blue-500);
+  border-color: var(--blue-500);
+  color: var(--white);
+}
+.inf-toggle-chip:focus-visible { outline: none; box-shadow: var(--shadow-focus); }
+
+/* ── Filas dinámicas del formulario (redes, listas, marcas EP) ── */
+.inf-red-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr 140px 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+.inf-list-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+.inf-marca-ep-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+}
+.inf-check {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--fs-body-s);
+  color: var(--fg-2);
+  white-space: nowrap;
+}
+
+@media (max-width: 767px) {
+  .inf-red-row { grid-template-columns: 1fr 1fr; }
+  .inf-marca-ep-row { grid-template-columns: 1fr; }
+}
+
 /* ── Agregar participante (CampanaDetail) ── */
 .inf-add-participant {
   display: grid;

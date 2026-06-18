@@ -3,15 +3,31 @@ import { useNavigate } from 'react-router-dom'
 import { Button, Input, Select, EmptyDash, Chip } from '../../../components/primitives'
 import { getInfluencers } from '../lib/infQueries'
 
-const TIPOS = ['nano', 'micro', 'macro', 'celebrity']
-
 const TIPO_TONE = { nano: 'slate', micro: 'blue', macro: 'yellow', celebrity: 'green' }
+const toneTipo = (t) => TIPO_TONE[String(t).toLowerCase()] ?? 'slate'
 
 function formatSeguidores(n) {
   if (!n && n !== 0) return null
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
   if (n >= 1_000) return `${Math.round(n / 1_000)}K`
   return n.toLocaleString('es-VE')
+}
+
+// Muestra hasta 2 chips y un "+N" con tooltip para el resto.
+function ChipsTruncados({ valores, tone = 'slate' }) {
+  if (!valores || valores.length === 0) return <EmptyDash />
+  const visibles = valores.slice(0, 2)
+  const resto = valores.slice(2)
+  return (
+    <span className="inf-chips">
+      {visibles.map((v) => (
+        <Chip key={v} tone={tone}>{v}</Chip>
+      ))}
+      {resto.length > 0 && (
+        <span className="inf-chip-more" title={resto.join(', ')}>+{resto.length}</span>
+      )}
+    </span>
+  )
 }
 
 export default function InfluencersList() {
@@ -32,8 +48,12 @@ export default function InfluencersList() {
       .finally(() => setLoading(false))
   }, [])
 
+  const tipos = useMemo(
+    () => [...new Set(todos.flatMap((i) => i.tipos))].sort(),
+    [todos],
+  )
   const categorias = useMemo(
-    () => [...new Set(todos.map((i) => i.categoria).filter(Boolean))].sort(),
+    () => [...new Set(todos.flatMap((i) => i.categorias))].sort(),
     [todos],
   )
 
@@ -41,8 +61,8 @@ export default function InfluencersList() {
     const q = busqueda.toLowerCase()
     return todos.filter((i) => {
       const matchNombre = i.nombre.toLowerCase().includes(q)
-      const matchTipo = !filtroTipo || i.tipo === filtroTipo
-      const matchCat = !filtroCategoria || i.categoria === filtroCategoria
+      const matchTipo = !filtroTipo || i.tipos.includes(filtroTipo)
+      const matchCat = !filtroCategoria || i.categorias.includes(filtroCategoria)
       return matchNombre && matchTipo && matchCat
     })
   }, [todos, busqueda, filtroTipo, filtroCategoria])
@@ -72,7 +92,7 @@ export default function InfluencersList() {
           <Select
             value={filtroTipo}
             onChange={setFiltroTipo}
-            options={TIPOS}
+            options={tipos}
             placeholder="Tipo"
           />
           <Select
@@ -92,25 +112,24 @@ export default function InfluencersList() {
               <span className="left">
                 <b>{filtrados.length}</b>{' '}
                 {filtrados.length === 1 ? 'influencer' : 'influencers'}
+                {filtrados.length !== todos.length && ` de ${todos.length}`}
               </span>
             </div>
             <table className="pl-table">
               <thead>
                 <tr>
                   <th>Nombre</th>
-                  <th>Instagram</th>
-                  <th>TikTok</th>
-                  <th>YouTube</th>
-                  <th>Ciudad</th>
+                  <th>Redes</th>
                   <th>Seguidores</th>
-                  <th>Categoría</th>
+                  <th>Ciudad</th>
+                  <th>Categorías</th>
                   <th>Tipo</th>
                 </tr>
               </thead>
               <tbody>
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td colSpan={8}>
+                    <td colSpan={6}>
                       <div className="inf-empty">Sin resultados</div>
                     </td>
                   </tr>
@@ -118,17 +137,24 @@ export default function InfluencersList() {
                   filtrados.map((i) => (
                     <tr key={i.id} onClick={() => navigate(`/inf/influencers/${i.id}`)}>
                       <td className="name">{i.nombre}</td>
-                      <td>{i.usuario_instagram || <EmptyDash />}</td>
-                      <td>{i.usuario_tiktok || <EmptyDash />}</td>
-                      <td>{i.usuario_youtube || <EmptyDash />}</td>
-                      <td>{i.ciudad || <EmptyDash />}</td>
                       <td>
-                        {i.seguidores != null ? formatSeguidores(i.seguidores) : <EmptyDash />}
+                        <ChipsTruncados
+                          valores={i.redes.map((r) => r.plataforma).filter(Boolean)}
+                          tone="blue"
+                        />
                       </td>
-                      <td>{i.categoria || <EmptyDash />}</td>
                       <td>
-                        {i.tipo ? (
-                          <Chip tone={TIPO_TONE[i.tipo] ?? 'slate'}>{i.tipo}</Chip>
+                        {i.seguidores ? formatSeguidores(i.seguidores) : <EmptyDash />}
+                      </td>
+                      <td>{i.ciudad || <EmptyDash />}</td>
+                      <td><ChipsTruncados valores={i.categorias} /></td>
+                      <td>
+                        {i.tipos.length > 0 ? (
+                          <span className="inf-chips">
+                            {i.tipos.map((t) => (
+                              <Chip key={t} tone={toneTipo(t)}>{t}</Chip>
+                            ))}
+                          </span>
                         ) : (
                           <EmptyDash />
                         )}
